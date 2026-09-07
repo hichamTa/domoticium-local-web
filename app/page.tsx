@@ -105,10 +105,17 @@ export default async function LocalDashboardPage() {
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px 64px" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 4 }}>Domoticium — Accès local</h1>
-      <p style={{ color: "#9a9aa4", fontSize: 14, marginTop: 0, marginBottom: 28 }}>
-        Squelette de vérification — pas encore l&apos;interface finale.
-      </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 4 }}>Domoticium — Accès local</h1>
+          <p style={{ color: "#9a9aa4", fontSize: 14, marginTop: 0, marginBottom: 28 }}>
+            Squelette de vérification — pas encore l&apos;interface finale.
+          </p>
+        </div>
+        <a href="/api/auth/logout" style={{ color: "#9a9aa4", fontSize: 13 }}>
+          Se déconnecter
+        </a>
+      </div>
 
       {"error" in result ? (
         <div
