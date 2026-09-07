@@ -6,7 +6,7 @@ description: >
   Domoticium principal — rien à configurer manuellement.
   Chantier en cours (2026-09-06) : squelette de vérification, pas encore
   l'interface finale.
-version: "0.2.0"
+version: "0.3.0"
 slug: "domoticium_local_web"
 init: false
 arch:
@@ -18,5 +18,7 @@ boot: "auto"
 host_network: true
 options:
   ingest_secret: ""
+  site_prefix: ""
 schema:
   ingest_secret: str
+  site_prefix: str
