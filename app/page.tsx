@@ -1,36 +1,18 @@
 import { readFileSync } from "fs";
+import type { LocalDevice, LocalRoom } from "@/lib/types";
+import { Dashboard } from "@/components/Dashboard";
 
-// Sans ça, Next.js pré-rendait cette page en STATIQUE au moment du build
-// Docker (aucun /data/options.json ni addon joignable à ce moment-là) et
-// aurait servi éternellement la même page d'erreur figée à chaque requête
-// réelle une fois déployé — trouvé en testant le build local avant de
-// pousser, pas supposé.
+// "Vraie" interface du chantier "accès local" (2026-09-07, cf. HANDOFF.md du
+// dépôt domoticium-web) — équipements par pièce + panneau alarme à droite,
+// décidé avec Hicham. Remplace la page de vérification minimale du squelette
+// initial. Migration vers le contrat backend/local.ts (posé côté
+// domoticium-web) reste à faire — cette page continue d'utiliser sa propre
+// logique ad hoc pour l'instant, cf. "reste à faire" dans HANDOFF.
 export const dynamic = "force-dynamic";
 
-// Squelette du chantier "accès local" (2026-09-06, cf. HANDOFF.md du dépôt
-// domoticium-web) — 1re page réelle, volontairement simple : prouve que
-// l'app locale peut lire les équipements directement depuis l'addon
-// Domoticium (127.0.0.1:8098, même réseau hôte — host_network: true des deux
-// côtés), sans jamais passer par Supabase/le cloud. Pas encore la vraie
-// interface "équipements par pièce" soignée décidée avec Hicham — juste
-// assez pour vérifier que le bon chemin de données fonctionne.
-
-interface LocalDevice {
-  entityId: string;
-  name: string;
-  domain: string;
-  state: string | null;
-}
-
-interface LocalRoom {
-  name: string;
-  devices: LocalDevice[];
-}
-
-// Entités internes HA/Supervisor (CPU/mémoire de chaque module, versions,
-// sauvegardes...) — bruit technique, pas de vrais équipements. La route
-// addon /local/devices ne les filtre pas encore (cf. HANDOFF) ; filtré ici
-// en attendant, pour ne pas polluer la toute première vraie page.
+// Mêmes préfixes de bruit HA/Supervisor que dans le squelette initial —
+// toujours filtrés côté page en attendant que /local/devices le fasse
+// lui-même (cf. HANDOFF, pas encore fait).
 const NOISE_PREFIXES = [
   "sensor.home_assistant_",
   "sensor.backup_",
@@ -77,7 +59,7 @@ function readIngestSecret(): string | null {
   }
 }
 
-async function fetchLocalDevices(): Promise<{ rooms: LocalRoom[] } | { error: string }> {
+async function fetchLocalDevices(): Promise<{ rooms: LocalRoom[]; alarm: LocalDevice | null } | { error: string }> {
   const secret = readIngestSecret();
   if (!secret) {
     return { error: "ingest_secret absent de /data/options.json — configuration de l'add-on incomplète." };
@@ -91,10 +73,27 @@ async function fetchLocalDevices(): Promise<{ rooms: LocalRoom[] } | { error: st
       return { error: `L'addon Domoticium a répondu ${res.status} — vérifier qu'il tourne bien.` };
     }
     const data = (await res.json()) as { rooms: LocalRoom[] };
+
+    // L'alarme est extraite des pièces pour son propre panneau dédié (décidé
+    // avec Hicham : "équipements par pièce" + "alarme à droite"), pas mélangée
+    // aux cartes d'équipement — au plus une seule alarme par site aujourd'hui,
+    // le premier trouvé fait foi.
+    let alarm: LocalDevice | null = null;
     const rooms = data.rooms
-      .map((r) => ({ ...r, devices: r.devices.filter((d) => !isNoise(d.entityId)) }))
+      .map((r) => {
+        const devices = r.devices.filter((d) => {
+          if (isNoise(d.entityId)) return false;
+          if (d.domain === "alarm_control_panel") {
+            if (!alarm) alarm = d;
+            return false;
+          }
+          return true;
+        });
+        return { ...r, devices };
+      })
       .filter((r) => r.devices.length > 0);
-    return { rooms };
+
+    return { rooms, alarm };
   } catch (e) {
     return { error: `Impossible de joindre l'addon Domoticium (127.0.0.1:8098) : ${e instanceof Error ? e.message : String(e)}` };
   }
@@ -104,13 +103,11 @@ export default async function LocalDashboardPage() {
   const result = await fetchLocalDevices();
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px 64px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+    <main style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px 64px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 4 }}>Domoticium — Accès local</h1>
-          <p style={{ color: "#9a9aa4", fontSize: 14, marginTop: 0, marginBottom: 28 }}>
-            Squelette de vérification — pas encore l&apos;interface finale.
-          </p>
+          <p style={{ color: "#9a9aa4", fontSize: 14, margin: 0 }}>Pilotage de vos équipements sans internet.</p>
         </div>
         <a href="/api/auth/logout" style={{ color: "#9a9aa4", fontSize: 13 }}>
           Se déconnecter
@@ -130,46 +127,8 @@ export default async function LocalDashboardPage() {
         >
           {result.error}
         </div>
-      ) : result.rooms.length === 0 ? (
-        <p style={{ color: "#9a9aa4" }}>Aucun équipement trouvé.</p>
       ) : (
-        result.rooms.map((room) => (
-          <section key={room.name} style={{ marginBottom: 24 }}>
-            <h2
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                letterSpacing: 0.5,
-                textTransform: "uppercase",
-                color: "#8a8a94",
-                marginBottom: 10,
-              }}
-            >
-              {room.name}
-            </h2>
-            <div style={{ display: "grid", gap: 8 }}>
-              {room.devices.map((d) => (
-                <div
-                  key={d.entityId}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    background: "#1a1c22",
-                    borderRadius: 8,
-                    padding: "10px 14px",
-                    fontSize: 14,
-                  }}
-                >
-                  <span>{d.name}</span>
-                  <span style={{ color: "#9a9aa4", fontVariantNumeric: "tabular-nums" }}>
-                    {d.state ?? "—"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        ))
+        <Dashboard rooms={result.rooms} alarmDevice={result.alarm} />
       )}
     </main>
   );
