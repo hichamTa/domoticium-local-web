@@ -1,53 +1,17 @@
 import { readFileSync } from "fs";
+import { LogOut } from "lucide-react";
 import type { LocalDevice, LocalRoom } from "@/lib/types";
 import { Dashboard } from "@/components/Dashboard";
 
 // "Vraie" interface du chantier "accès local" (2026-09-07, cf. HANDOFF.md du
 // dépôt domoticium-web) — équipements par pièce + panneau alarme à droite,
-// décidé avec Hicham. Remplace la page de vérification minimale du squelette
-// initial. Migration vers le contrat backend/local.ts (posé côté
-// domoticium-web) reste à faire — cette page continue d'utiliser sa propre
-// logique ad hoc pour l'instant, cf. "reste à faire" dans HANDOFF.
+// décidé avec Hicham. Reprend les VRAIS tokens de couleur/Tailwind de l'app
+// cloud (globals.css/tailwind.config.ts copiés depuis domoticium-web) — le
+// filtrage du bruit HA/Supervisor et la résolution des noms se font
+// maintenant côté addon (handle_local_devices, main.py), plus ici : cette
+// page n'a plus à deviner quoi que ce soit. Migration vers le contrat
+// backend/local.ts (posé côté domoticium-web) reste à faire.
 export const dynamic = "force-dynamic";
-
-// Mêmes préfixes de bruit HA/Supervisor que dans le squelette initial —
-// toujours filtrés côté page en attendant que /local/devices le fasse
-// lui-même (cf. HANDOFF, pas encore fait).
-const NOISE_PREFIXES = [
-  "sensor.home_assistant_",
-  "sensor.backup_",
-  "binary_sensor.terminal_ssh",
-  "sensor.terminal_ssh",
-  "switch.terminal_ssh",
-  "binary_sensor.domoticium_en_cours",
-  "sensor.domoticium_version",
-  "sensor.domoticium_pourcentage",
-  "switch.domoticium",
-  "binary_sensor.mosquitto_broker",
-  "sensor.mosquitto_broker",
-  "switch.mosquitto_broker",
-  "binary_sensor.zigbee2mqtt_en_cours",
-  "sensor.zigbee2mqtt_version",
-  "sensor.zigbee2mqtt_pourcentage",
-  "switch.zigbee2mqtt",
-  "binary_sensor.matter_server",
-  "sensor.matter_server",
-  "switch.matter_server",
-  "binary_sensor.openthread_border_router",
-  "sensor.openthread_border_router",
-  "switch.openthread_border_router",
-  "binary_sensor.frigate_en_cours",
-  "sensor.frigate_version",
-  "sensor.frigate_pourcentage",
-  "switch.frigate",
-  "binary_sensor.samba_share",
-  "sensor.samba_share",
-  "switch.samba_share",
-];
-
-function isNoise(entityId: string): boolean {
-  return NOISE_PREFIXES.some((p) => entityId.startsWith(p));
-}
 
 function readIngestSecret(): string | null {
   try {
@@ -82,7 +46,6 @@ async function fetchLocalDevices(): Promise<{ rooms: LocalRoom[]; alarm: LocalDe
     const rooms = data.rooms
       .map((r) => {
         const devices = r.devices.filter((d) => {
-          if (isNoise(d.entityId)) return false;
           if (d.domain === "alarm_control_panel") {
             if (!alarm) alarm = d;
             return false;
@@ -103,28 +66,22 @@ export default async function LocalDashboardPage() {
   const result = await fetchLocalDevices();
 
   return (
-    <main style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px 64px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+    <main className="mx-auto max-w-4xl px-4 pb-16 pt-6 md:px-8">
+      <div className="mb-7 flex items-start justify-between gap-3">
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 4 }}>Domoticium — Accès local</h1>
-          <p style={{ color: "#9a9aa4", fontSize: 14, margin: 0 }}>Pilotage de vos équipements sans internet.</p>
+          <h1 className="text-xl font-bold tracking-tight">Domoticium — Accès local</h1>
+          <p className="text-sm text-muted-foreground">Pilotage de vos équipements sans internet.</p>
         </div>
-        <a href="/api/auth/logout" style={{ color: "#9a9aa4", fontSize: 13 }}>
-          Se déconnecter
+        <a
+          href="/api/auth/logout"
+          className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="h-3.5 w-3.5" /> Se déconnecter
         </a>
       </div>
 
       {"error" in result ? (
-        <div
-          style={{
-            background: "#2a1616",
-            border: "1px solid #5a2a2a",
-            borderRadius: 8,
-            padding: 16,
-            color: "#f5b8b8",
-            fontSize: 14,
-          }}
-        >
+        <div className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
           {result.error}
         </div>
       ) : (

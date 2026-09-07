@@ -2,17 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { ShieldCheck } from "lucide-react";
 import type { LocalDevice } from "@/lib/types";
 
-const STATE_LABELS: Record<string, { label: string; color: string }> = {
-  disarmed: { label: "Désarmée", color: "#4ade80" },
-  armed_home: { label: "Armée — Présent", color: "#60a5fa" },
-  armed_away: { label: "Armée — Absent", color: "#f97316" },
-  armed_night: { label: "Armée — Nuit", color: "#a78bfa" },
-  pending: { label: "Armement en cours…", color: "#facc15" },
-  arming: { label: "Armement en cours…", color: "#facc15" },
-  disarming: { label: "Désarmement en cours…", color: "#facc15" },
-  triggered: { label: "⚠ Alarme déclenchée", color: "#f87171" },
+const STATE_LABELS: Record<string, { label: string; dotClass: string }> = {
+  disarmed: { label: "Désarmée", dotClass: "bg-success" },
+  armed_home: { label: "Armée — Présent", dotClass: "bg-info" },
+  armed_away: { label: "Armée — Absent", dotClass: "bg-warning" },
+  armed_night: { label: "Armée — Nuit", dotClass: "bg-info" },
+  pending: { label: "Armement en cours…", dotClass: "bg-warning animate-pulse" },
+  arming: { label: "Armement en cours…", dotClass: "bg-warning animate-pulse" },
+  disarming: { label: "Désarmement en cours…", dotClass: "bg-warning animate-pulse" },
+  triggered: { label: "Alarme déclenchée", dotClass: "bg-danger animate-pulse" },
 };
 
 async function sendAlarmCommand(service: string, entityId: string, code: string) {
@@ -40,7 +41,7 @@ export function AlarmPanel({
 
   const current = (device.state && STATE_LABELS[device.state]) || {
     label: device.state ?? "État inconnu",
-    color: "#9a9aa4",
+    dotClass: "bg-muted-foreground",
   };
 
   const act = (service: string) => {
@@ -55,25 +56,14 @@ export function AlarmPanel({
   };
 
   return (
-    <aside
-      style={{
-        background: "#1a1c22",
-        borderRadius: 12,
-        padding: 20,
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-        position: "sticky",
-        top: 24,
-      }}
-    >
-      <h2 style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", color: "#8a8a94", margin: 0 }}>
-        Alarme
+    <aside className="sticky top-6 h-fit space-y-4 rounded-xl bg-card p-5">
+      <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <ShieldCheck className="h-3.5 w-3.5" /> Alarme
       </h2>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ width: 10, height: 10, borderRadius: "50%", background: current.color, flexShrink: 0 }} />
-        <span style={{ fontSize: 15, fontWeight: 500 }}>{current.label}</span>
+      <div className="flex items-center gap-2">
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${current.dotClass}`} />
+        <span className="text-sm font-medium">{current.label}</span>
       </div>
 
       <input
@@ -82,59 +72,39 @@ export function AlarmPanel({
         placeholder="Code (si requis)"
         value={code}
         onChange={(e) => setCode(e.target.value)}
-        style={{
-          background: "#0f1115",
-          border: "1px solid #2a2d36",
-          borderRadius: 8,
-          padding: "8px 12px",
-          color: "#e8e8ec",
-          fontSize: 14,
-        }}
+        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground"
       />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => act("alarm_control_panel.alarm_disarm")}
           disabled={pending}
-          style={btnStyle("#3b82f6")}
+          className="rounded-lg bg-primary py-2.5 text-xs font-medium text-primary-foreground disabled:opacity-60"
         >
           Désarmer
         </button>
         <button
           onClick={() => act("alarm_control_panel.alarm_arm_home")}
           disabled={pending}
-          style={btnStyle("#2a2d36")}
+          className="rounded-lg bg-secondary py-2.5 text-xs font-medium text-secondary-foreground disabled:opacity-60"
         >
           Présent
         </button>
         <button
           onClick={() => act("alarm_control_panel.alarm_arm_night")}
           disabled={pending}
-          style={btnStyle("#2a2d36")}
+          className="rounded-lg bg-secondary py-2.5 text-xs font-medium text-secondary-foreground disabled:opacity-60"
         >
           Nuit
         </button>
         <button
           onClick={() => act("alarm_control_panel.alarm_arm_away")}
           disabled={pending}
-          style={btnStyle("#2a2d36")}
+          className="rounded-lg bg-secondary py-2.5 text-xs font-medium text-secondary-foreground disabled:opacity-60"
         >
           Absent
         </button>
       </div>
     </aside>
   );
-}
-
-function btnStyle(bg: string): React.CSSProperties {
-  return {
-    background: bg,
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    padding: "10px 0",
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: "pointer",
-  };
 }

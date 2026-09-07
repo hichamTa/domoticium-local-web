@@ -1,3 +1,5 @@
+import { AlertTriangle, House } from "lucide-react";
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -11,51 +13,27 @@ export default async function LoginPage({
   const error = params.error ? errorMessages[params.error] : null;
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 24,
-        padding: 24,
-        textAlign: "center",
-      }}
-    >
+    <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+        <House className="h-7 w-7" />
+      </div>
+
       <div>
-        <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>Domoticium — Accès local</h1>
-        <p style={{ color: "#9a9aa4", fontSize: 14, maxWidth: 360 }}>
+        <h1 className="text-xl font-bold tracking-tight">Domoticium — Accès local</h1>
+        <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
           Connectez-vous avec votre compte Home Assistant pour piloter vos équipements sans internet.
         </p>
       </div>
 
       {error && (
-        <div
-          style={{
-            background: "#2a1616",
-            border: "1px solid #5a2a2a",
-            borderRadius: 8,
-            padding: "10px 16px",
-            color: "#f5b8b8",
-            fontSize: 13,
-          }}
-        >
-          {error}
+        <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">
+          <AlertTriangle className="h-4 w-4 shrink-0" /> {error}
         </div>
       )}
 
       <a
         href="/api/auth/login"
-        style={{
-          background: "#3b82f6",
-          color: "#fff",
-          borderRadius: 8,
-          padding: "10px 20px",
-          fontSize: 14,
-          fontWeight: 500,
-          textDecoration: "none",
-        }}
+        className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
       >
         Se connecter
       </a>

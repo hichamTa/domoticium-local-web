@@ -2,9 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { AlertTriangle, Lightbulb, Power, Gauge, type LucideIcon } from "lucide-react";
 import type { LocalDevice, LocalRoom } from "@/lib/types";
 import { TOGGLABLE_DOMAINS } from "@/lib/types";
 import { AlarmPanel } from "./AlarmPanel";
+
+const DOMAIN_ICON: Record<string, LucideIcon> = {
+  light: Lightbulb,
+  switch: Power,
+};
 
 async function sendCommand(service: string, entityId: string, data?: Record<string, unknown>) {
   const res = await fetch("/api/command", {
@@ -29,6 +35,7 @@ function DeviceRow({ device, onError }: { device: LocalDevice; onError: (msg: st
   const [pending, startTransition] = useTransition();
   const togglable = TOGGLABLE_DOMAINS.has(device.domain);
   const isOn = device.state === "on";
+  const Icon = DOMAIN_ICON[device.domain] ?? Gauge;
 
   const handleToggle = () => {
     startTransition(async () => {
@@ -43,54 +50,31 @@ function DeviceRow({ device, onError }: { device: LocalDevice; onError: (msg: st
 
   return (
     <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        background: "#1a1c22",
-        borderRadius: 10,
-        padding: "12px 16px",
-        fontSize: 14,
-        opacity: pending ? 0.6 : 1,
-        transition: "opacity 0.15s",
-      }}
+      className="flex items-center justify-between gap-3 rounded-lg bg-card px-4 py-3 text-sm transition-opacity"
+      style={{ opacity: pending ? 0.6 : 1 }}
     >
-      <span>{device.name}</span>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <Icon
+          className={`h-4 w-4 shrink-0 ${togglable && isOn ? "text-primary" : "text-muted-foreground"}`}
+        />
+        <span className="truncate">{device.name}</span>
+      </div>
       {togglable ? (
         <button
           onClick={handleToggle}
           disabled={pending}
           aria-pressed={isOn}
           aria-label={`${device.name} — ${isOn ? "allumé" : "éteint"}`}
-          style={{
-            width: 44,
-            height: 26,
-            borderRadius: 13,
-            border: "none",
-            background: isOn ? "#3b82f6" : "#3a3d46",
-            position: "relative",
-            cursor: pending ? "default" : "pointer",
-            padding: 0,
-            flexShrink: 0,
-          }}
+          className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
+          style={{ background: isOn ? "hsl(var(--primary))" : "hsl(var(--secondary))" }}
         >
           <span
-            style={{
-              position: "absolute",
-              top: 3,
-              left: isOn ? 21 : 3,
-              width: 20,
-              height: 20,
-              borderRadius: "50%",
-              background: "#fff",
-              transition: "left 0.15s",
-            }}
+            className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all"
+            style={{ left: isOn ? 22 : 2 }}
           />
         </button>
       ) : (
-        <span style={{ color: "#9a9aa4", fontVariantNumeric: "tabular-nums" }}>
-          {device.state ?? "—"}
-        </span>
+        <span className="shrink-0 tabular-nums text-muted-foreground">{device.state ?? "—"}</span>
       )}
     </div>
   );
@@ -106,48 +90,23 @@ export function Dashboard({
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: alarmDevice ? "1fr 320px" : "1fr",
-        gap: 24,
-        alignItems: "start",
-      }}
-    >
-      <div style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
+    <div className={alarmDevice ? "grid gap-6 md:grid-cols-[1fr_300px]" : "grid gap-6"}>
+      <div className="min-w-0 space-y-6">
         {error && (
-          <div
-            style={{
-              background: "#2a1616",
-              border: "1px solid #5a2a2a",
-              borderRadius: 8,
-              padding: "10px 16px",
-              color: "#f5b8b8",
-              fontSize: 13,
-            }}
-          >
-            {error}
+          <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+            <AlertTriangle className="h-4 w-4 shrink-0" /> {error}
           </div>
         )}
 
         {rooms.length === 0 ? (
-          <p style={{ color: "#9a9aa4" }}>Aucun équipement trouvé.</p>
+          <p className="text-sm text-muted-foreground">Aucun équipement trouvé.</p>
         ) : (
           rooms.map((room) => (
             <section key={room.name}>
-              <h2
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  letterSpacing: 0.5,
-                  textTransform: "uppercase",
-                  color: "#8a8a94",
-                  marginBottom: 10,
-                }}
-              >
+              <h2 className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {room.name}
               </h2>
-              <div style={{ display: "grid", gap: 8 }}>
+              <div className="space-y-2">
                 {room.devices.map((d) => (
                   <DeviceRow key={d.entityId} device={d} onError={setError} />
                 ))}
