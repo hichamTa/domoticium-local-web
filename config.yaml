@@ -1,0 +1,22 @@
+name: "Domoticium — Accès local"
+description: >
+  Interface web locale de secours pour Domoticium — pilotage des équipements,
+  alarme et caméras directement depuis le réseau local du site, sans passer
+  par le cloud. Installé et mis à jour automatiquement par l'add-on
+  Domoticium principal — rien à configurer manuellement.
+  Chantier en cours (2026-09-06) : squelette de vérification, pas encore
+  l'interface finale.
+version: "0.1.0"
+slug: "domoticium_local_web"
+init: false
+arch:
+  - aarch64
+  - armv7
+  - amd64
+startup: "application"
+boot: "auto"
+host_network: true
+options:
+  ingest_secret: ""
+schema:
+  ingest_secret: str
