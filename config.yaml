@@ -5,7 +5,7 @@ description: >
   Fonctionne même sans connexion internet. Nécessite l'add-on Domoticium
   principal déjà installé et configuré sur ce Home Assistant (qui installe
   celui-ci automatiquement).
-version: "0.3.3"
+version: "0.3.4"
 slug: "domoticium_web"
 init: false
 # armv7 retiré (2026-09-08) : un build Next.js complet sous QEMU armv7 est
@@ -31,6 +31,11 @@ image: "ghcr.io/hichamta/domoticium-web"
 options:
   ingest_secret: ""
   site_prefix: ""
+  # 2026-09-08, chantier caméras locales : mot de passe API go2rtc, transmis
+  # automatiquement par install_local_web_addon() (main.py) — même mécanisme
+  # que ingest_secret, jamais saisi à la main par Hicham.
+  go2rtc_password: ""
 schema:
   ingest_secret: str
   site_prefix: str
+  go2rtc_password: str
