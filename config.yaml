@@ -1,13 +1,12 @@
 name: "Domoticium — Accès local"
 description: >
-  Interface web locale de secours pour Domoticium — pilotage des équipements,
-  alarme et caméras directement depuis le réseau local du site, sans passer
-  par le cloud. Installé et mis à jour automatiquement par l'add-on
-  Domoticium principal — rien à configurer manuellement.
-  Chantier en cours (2026-09-06) : squelette de vérification, pas encore
-  l'interface finale.
-version: "0.5.0"
-slug: "domoticium_local_web"
+  Interface web locale de Domoticium — pilotage des équipements, alarme et
+  caméras directement depuis le réseau du site, sans passer par le cloud.
+  Fonctionne même sans connexion internet. Nécessite l'add-on Domoticium
+  principal déjà installé et configuré sur ce Home Assistant (qui installe
+  celui-ci automatiquement).
+version: "0.2.0"
+slug: "domoticium_web"
 init: false
 arch:
   - aarch64
@@ -16,6 +15,13 @@ arch:
 startup: "application"
 boot: "auto"
 host_network: true
+# Image déjà construite, publiée par hichamTa/domoticium-web (dépôt PRIVÉ —
+# son code source n'est jamais exposé ici ni nulle part de public) via
+# .github/workflows/publish-addon-image.yml à chaque changement de code réel.
+# Un seul tag multi-architecture (arm64/arm-v7/amd64 construits ensemble via
+# buildx) — Docker résout automatiquement la bonne variante selon le
+# processeur du Pi, pas besoin du gabarit {arch}.
+image: "ghcr.io/hichamta/domoticium-web"
 options:
   ingest_secret: ""
   site_prefix: ""
