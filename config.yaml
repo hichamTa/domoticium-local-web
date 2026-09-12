@@ -5,7 +5,7 @@ description: >
   Fonctionne même sans connexion internet. Nécessite l'add-on Domoticium
   principal déjà installé et configuré sur ce Home Assistant (qui installe
   celui-ci automatiquement).
-version: "0.3.28"
+version: "0.3.29"
 slug: "domoticium_web"
 init: false
 # armv7 retiré (2026-09-08) : un build Next.js complet sous QEMU armv7 est
